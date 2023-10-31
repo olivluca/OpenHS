@@ -1,34 +1,11 @@
-#include <Arduino.h>
-#include <BLE2902.h>
 #include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <M5StickC.h>
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "esp_bt.h"
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
-#include "esp_gap_ble_api.h"
-#include "esp_gatt_defs.h"
-#include "esp_gattc_api.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-
-#define LED_BUILTIN 10
+#define LED_BUILTIN 4
 
 /** Random device address */
 esp_bd_addr_t rnd_addr = {0xFF, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
-/** REPLACE WITH YOUR KEY, this is fake one, consider this padding
-uint8_t public_key[28] = {
-    0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
-    0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
-    0x05, 0x05, 0x05, 0x05};
+#include "key.h"
 
 /** Advertisement payload */
 uint8_t adv_data[31] = {
@@ -82,17 +59,17 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
   case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
     //adv start complete event to indicate adv start successfully or failed
     if ((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-      Serial.printf("advertising start failed: %s", esp_err_to_name(err));
+      Serial.printf("advertising start failed: %s\n", esp_err_to_name(err));
     } else {
-      Serial.printf("advertising has started.");
+      Serial.printf("advertising has started.\n");
     }
     break;
 
   case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
     if ((err = param->adv_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-      Serial.printf("adv stop failed: %s", esp_err_to_name(err));
+      Serial.printf("adv stop failed: %s\n", esp_err_to_name(err));
     } else {
-      Serial.printf("stop adv successfully");
+      Serial.printf("stop adv successfully\n");
     }
     break;
   default:
@@ -118,35 +95,24 @@ void set_payload_from_key(uint8_t *payload, uint8_t *public_key) {
 
 void setup() {
   Serial.begin(115200);
-  M5.begin();
-// M5.Axp.ScreenBreath(7);
 
-// Write text on LCD
-  M5.Lcd.setRotation(3);
-  M5.Lcd.setCursor(0, 30, 4);
-  M5.Lcd.println("OHS Ready!");
-
-// RED LED
+// GREEN LED
   pinMode(LED_BUILTIN, OUTPUT);
  
   set_addr_from_key(rnd_addr, public_key);
   set_payload_from_key(adv_data, public_key);
 
-  BLEDevice::init("");
+  BLEDevice::init("ACME");
   BLEDevice::setCustomGapHandler(esp_gap_cb);
-
-  esp_err_t status;
-  if ((status = esp_ble_gap_set_rand_addr(rnd_addr)) != ESP_OK) {
-    Serial.printf("couldn't set random address: %s", esp_err_to_name(status));
-  }
 
   BLEAdvertisementData advertisementData = BLEAdvertisementData();
   advertisementData.setManufacturerData(std::string((char *)adv_data + 2, sizeof(adv_data) - 2));
-
+ 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
   pAdvertising->setMaxInterval(0x0C80);
   pAdvertising->setMinInterval(0x0640);
+  pAdvertising->setDeviceAddress(rnd_addr);
   pAdvertising->setAdvertisementData(advertisementData);
 
   BLEDevice::startAdvertising();
@@ -154,8 +120,8 @@ void setup() {
 
 void loop() {
   // LED loop
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(10000);                       // wait for a second
   digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);                       // wait for a second
+  delay(500);                       // wait for a second
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(5000);                       // wait for a second
 }
