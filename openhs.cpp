@@ -1,6 +1,5 @@
+#include "openhs.h"
 #include <BLEDevice.h>
-
-#define LED_BUILTIN 4
 
 /** Random device address */
 esp_bd_addr_t rnd_addr = {0xFF, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -93,12 +92,7 @@ void set_payload_from_key(uint8_t *payload, uint8_t *public_key) {
   payload[29] = public_key[0] >> 6;
 }
 
-void setup() {
-  Serial.begin(115200);
-
-// GREEN LED
-  pinMode(LED_BUILTIN, OUTPUT);
- 
+void OpenHSSetup() {
   set_addr_from_key(rnd_addr, public_key);
   set_payload_from_key(adv_data, public_key);
 
@@ -116,12 +110,4 @@ void setup() {
   pAdvertising->setAdvertisementData(advertisementData);
 
   BLEDevice::startAdvertising();
-}
-
-void loop() {
-  // LED loop
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(500);                       // wait for a second
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(5000);                       // wait for a second
 }
